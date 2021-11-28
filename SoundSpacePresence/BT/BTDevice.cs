@@ -73,18 +73,35 @@ namespace SoundSpacePresence
                             Stream.Read(data, 0, data.Length);
 
                             var received = Encoding.ASCII.GetString(data);
-
-                            _buffer += received;
-
-                            while (_buffer.Contains($"{splitter}"))
+                            for (int i = 0; i < received.Length; i++)
                             {
-                                var index = _buffer.IndexOf(splitter);
-                                var chunk = _buffer.Substring(0, index);
+                                char c = received[i];
 
-                                _buffer = _buffer.Substring(index + 1, _buffer.Length - (index + 1));
+                                if (c < 32)
+                                    continue;
 
-                                Receive(chunk);
+                                _buffer += c;
                             }
+
+                            string last = "";
+
+                            for (int i = 0; i < _buffer.Length; i++)
+                            {
+                                char c = _buffer[i];
+
+                                if (c == DataSeparator && (i == 0 || _buffer[i - 1] != '\\'))
+                                {
+                                    Receive(last);
+
+                                    last = "";
+                                }
+                                else if (c != '\\' || (i < _buffer.Length - 1 && _buffer[i + 1] != DataSeparator))
+                                {
+                                    last += c;
+                                }
+                            }
+
+                            _buffer = last;
                         }
                         else
                         {
