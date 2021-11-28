@@ -51,7 +51,10 @@ void setup()
 void write(String msg)
 {
   // Escaping data separators
-  msg.replace(String(stopChar), String('\\') + stopChar);
+  if (msg.indexOf(stopChar) != -1)
+  {
+    msg.replace(String(stopChar), String('\\') + stopChar);
+  }
   
   SerialBT.print(msg + stopChar);
 }
