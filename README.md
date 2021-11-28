@@ -37,7 +37,7 @@ void setup()
   Serial.begin(9600);
 
   Serial.println("Initializing Bluetooth...");
-  SerialBT.begin("LED Chain");
+  SerialBT.begin("BTLights");
   while (!SerialBT.isReady())
   {
     delay(500);
