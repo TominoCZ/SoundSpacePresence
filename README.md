@@ -25,17 +25,17 @@ You can send commands just by typing them into the console window.
 
 BluetoothSerial SerialBT;
 
-String buffer = ""; //the buffer of received data
-String mode = ""; //the last command type
+String buffer = ""; // The buffered received Bluetooth data
+String mode = "";   // The last received command type
 
-char stopChar = '$'; //the data segment separator
+char stopChar = '$'; // The message separator
 
-long lastPing = 0; //last time a ping was sent
+long lastPing = 0; // Last time a ping was sent
 
 void setup()
 {
   Serial.begin(9600);
-  
+
   Serial.println("Initializing Bluetooth...");
   SerialBT.begin("LED Chain");
   while (!SerialBT.isReady())
@@ -45,16 +45,19 @@ void setup()
   Serial.println("Bluetooth is ready!");
 }
 
+// Write a message back to the Client
 void write(String msg)
 {
   SerialBT.print(msg + stopChar);
 }
 
+// Work with the received Wave color
 void wave(byte r, byte g, byte b)
 {
   //TODO: Do whatever you want with the color
 }
 
+// Separates a string like "255,255,255" into RGB values
 bool parseColor(String data, byte *r, byte *g, byte *b)
 {
   uint32_t len = data.length();
@@ -89,6 +92,7 @@ bool parseColor(String data, byte *r, byte *g, byte *b)
   return count == 3;
 }
 
+// Process the Wave command
 bool processWaveColor(String data)
 {
   byte r = 0;
@@ -105,6 +109,7 @@ bool processWaveColor(String data)
   return false;
 }
 
+// Process the received command
 bool process(String msg, String &command)
 {
   uint32_t len = msg.length();
@@ -144,8 +149,10 @@ bool process(String msg, String &command)
   return false;
 }
 
+// Read data sent by the Client over Bluetooth
 void read()
 {
+  // Buffer available data sent by the Client
   while (SerialBT.available() > 0)
   {
     char c = SerialBT.read();
@@ -159,6 +166,7 @@ void read()
   uint32_t len = buffer.length();
   String last = "";
 
+  // Separate buffered data by the splitChar
   for (uint32_t i = 0; i < len; i++)
   {
     char c = buffer[i];
@@ -167,7 +175,8 @@ void read()
     {
       String command = "";
 
-      if (process(last, command)) // If 'true' is returned, the last command type is saved
+      // If 'true' is returned, the last command type is saved
+      if (process(last, command))
       {
         mode = command;
       }
@@ -180,9 +189,11 @@ void read()
     }
   }
 
+  // Makes sure that we keep the data if there is a message only partially received
   buffer = last;
 }
 
+// Ping the Client device to let it know we're still connected
 void ping()
 {
   if (!SerialBT.hasClient())
