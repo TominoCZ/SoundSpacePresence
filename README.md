@@ -18,3 +18,192 @@ The data sent to the device is in this format: ``{command}|{data}``, for example
 The remote device needs to constantly send a ping message (can be empty AKA ``$``), otherwise the Client disconnects after the Timeout period since the last received message has passed.
 
 You can send commands just by typing them into the console window.
+
+# ESP32/Arduino example code
+```C++
+#include <BluetoothSerial.h>
+
+BluetoothSerial SerialBT;
+
+String buffer = ""; //the buffer of received data
+String mode = ""; //the last command type
+
+char stopChar = '$'; //the data segment separator
+
+long lastPing = 0; //last time a ping was sent
+
+void setup()
+{
+  Serial.begin(9600);
+  
+  Serial.println("Initializing Bluetooth...");
+  SerialBT.begin("LED Chain");
+  while (!SerialBT.isReady())
+  {
+    delay(500);
+  }
+  Serial.println("Bluetooth is ready!");
+}
+
+void write(String msg)
+{
+  SerialBT.print(msg + stopChar);
+}
+
+void wave(byte r, byte g, byte b)
+{
+  //TODO: Do whatever you want with the color
+}
+
+bool parseColor(String data, byte *r, byte *g, byte *b)
+{
+  uint32_t len = data.length();
+  String last = "";
+
+  int count = 0;
+
+  for (uint32_t i = 0; i < len; i++)
+  {
+    char c = data[i];
+
+    if (c == ',' || i == len - 1)
+    {
+      if (i == len - 1)
+        last += c;
+      if (count == 0)
+        *r = byte(last.toInt());
+      else if (count == 1)
+        *g = byte(last.toInt());
+      else if (count == 2)
+        *b = byte(last.toInt());
+
+      count++;
+      last = "";
+    }
+    else
+    {
+      last += c;
+    }
+  }
+
+  return count == 3;
+}
+
+bool processWaveColor(String data)
+{
+  byte r = 0;
+  byte g = 0;
+  byte b = 0;
+
+  if (parseColor(data, &r, &g, &b))
+  {
+    wave(r, g, b);
+
+    return true;
+  }
+
+  return false;
+}
+
+bool process(String msg, String &command)
+{
+  uint32_t len = msg.length();
+
+  bool foundData = false;
+  String cmd = "";
+  String data = "";
+
+  for (uint32_t i = 0; i < len; i++)
+  {
+    char c = msg[i];
+
+    if (!foundData && c == '|')
+    {
+      foundData = true;
+      continue;
+    }
+
+    if (foundData)
+      data += c;
+    else
+      cmd += c;
+  }
+
+  command = cmd;
+
+  //TODO: This is where you can add your custom commands
+  if (cmd == "w")
+  {
+    return processWaveColor(data);
+  }
+  else if (cmd == "echo")
+  {
+    write(data);
+  }
+
+  return false;
+}
+
+void read()
+{
+  while (SerialBT.available() > 0)
+  {
+    char c = SerialBT.read();
+
+    if (c < 32)
+      continue;
+
+    buffer += c;
+  }
+
+  uint32_t len = buffer.length();
+  String last = "";
+
+  for (uint32_t i = 0; i < len; i++)
+  {
+    char c = buffer[i];
+
+    if (c == stopChar)
+    {
+      String command = "";
+
+      if (process(last, command)) // If 'true' is returned, the last command type is saved
+      {
+        mode = command;
+      }
+
+      last = "";
+    }
+    else
+    {
+      last += c;
+    }
+  }
+
+  buffer = last;
+}
+
+void ping()
+{
+  if (!SerialBT.hasClient())
+    return;
+
+  if (millis() - lastPing >= 750)
+  {
+    write("");
+
+    lastPing = millis();
+  }
+}
+
+void loop()
+{
+  ping();
+  read();
+
+  if (mode == "w")
+  {
+    //TODO: Maybe animate the wave
+  }
+}
+```
