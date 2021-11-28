@@ -6,7 +6,7 @@ This was primarily made to work with my game [Sound Space](https://www.roblox.co
 [Here's a video of it in action](https://www.youtube.com/watch?v=rbYCVzi9IPo&t=45s&ab_channel=Morphox)
 
 ## Connecting to the device
-The paired device's MAC address is passed in as a launch parameter.
+The (preferably) paired device's MAC address is passed in as a launch parameter.
 
 ## The remote device
 I recommend using an ESP32 or an Ardunio with a Bluetooth module for this. The device will control the lighting effects like a color wave on and LED strip.
@@ -33,6 +33,8 @@ String mode = "";
 char stopChar = '$';
 // Last time a ping was sent
 long lastPing = 0;
+// A debounce value
+bool isConnected = false;
 
 void setup()
 {
@@ -50,12 +52,15 @@ void setup()
 // Write a message back to the Client
 void write(String msg)
 {
+  if (!SerialBT.hasClient())
+    return;
+
   // Escaping data separators
   if (msg.indexOf(stopChar) != -1)
   {
     msg.replace(String(stopChar), String('\\') + stopChar);
   }
-  
+
   SerialBT.print(msg + stopChar);
 }
 
@@ -118,7 +123,7 @@ bool processWaveColor(String data)
 }
 
 // Process the received command
-bool process(String msg, String &command)
+bool processCommand(String msg, String &command)
 {
   uint32_t len = msg.length();
 
@@ -157,9 +162,41 @@ bool process(String msg, String &command)
   return false;
 }
 
+String processBuffer(String buf)
+{
+  uint32_t len = buf.length();
+  String last = "";
+
+  // Separate buffered data by the splitChar
+  for (uint32_t i = 0; i < len; i++)
+  {
+    char c = buf[i];
+    // Handling data separation and escaped data separators
+    if ((c == stopChar) && ((i == 0) || (buf[i - 1] != '\\')))
+    {
+      String command = "";
+      if (processCommand(last, command))
+      {
+        mode = command;
+      }
+      last = "";
+    }
+    else
+    {
+      last += c;
+    }
+  }
+
+  // Makes sure that we keep the data if there is a message only partially received
+  return last;
+}
+
 // Read data sent by the Client over Bluetooth
 void read()
 {
+  if (!SerialBT.hasClient())
+    return;
+
   // Buffer available data sent by the Client
   while (SerialBT.available() > 0)
   {
@@ -171,33 +208,7 @@ void read()
     buffer += c;
   }
 
-  uint32_t len = buffer.length();
-  String last = "";
-
-  // Separate buffered data by the splitChar
-  for (uint32_t i = 0; i < len; i++)
-  {
-    char c = buffer[i];
-    // Handling data separation and escaped data separators
-    if ((c == stopChar) && ((i == 0) || (buffer[i - 1] != '\\')))
-    {
-      String command = "";
-      if (process(last, command))
-      {
-        mode = command;
-
-        lastCommand = millis();
-      }
-      last = "";
-    }
-    else if ((c != '\\') || ((i < (len - 1)) && (buffer[i + 1] != stopChar)))
-    {
-      last += c;
-    }
-  }
-
-  // Makes sure that we keep the data if there is a message only partially received
-  buffer = last;
+  buffer = processBuffer(buffer);
 }
 
 // Ping the Client device to let it know we're still connected
@@ -214,8 +225,43 @@ void ping()
   }
 }
 
+// The Client has connected
+void connected()
+{
+  // Clears out client's buffer
+  write("");
+  write("Hello Client!");
+}
+
+// The Client has disconnected
+void disconnected()
+{
+}
+
+// Checking for a connected device
+void device()
+{
+  if (SerialBT.hasClient())
+  {
+    if (!isConnected)
+    {
+      isConnected = true;
+
+      connected();
+    }
+  }
+  else if (isConnected)
+  {
+    isConnected = false;
+
+    disconnected();
+  }
+}
+
 void loop()
 {
+  device();
+
   ping();
   read();
 

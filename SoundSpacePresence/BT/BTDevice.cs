@@ -91,11 +91,11 @@ namespace SoundSpacePresence
 
                                 if (c == DataSeparator && (i == 0 || _buffer[i - 1] != '\\'))
                                 {
-                                    Receive(last);
+                                    Receive(last.Replace("\\", ""));
 
                                     last = "";
                                 }
-                                else if (c != '\\' || (i < _buffer.Length - 1 && _buffer[i + 1] != DataSeparator))
+                                else
                                 {
                                     last += c;
                                 }
