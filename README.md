@@ -1,5 +1,7 @@
 # Sound Space Presence
-It's primarily made to work with my game [Sound Space](https://www.roblox.com/games/2677609345/Sound-Space), however you can implement this into your games too.
+This program tracks the bottom-right pixel of a game window and sends its color to a remote device over Bluetooth to display it.
+
+This was primarily made to work with my game [Sound Space](https://www.roblox.com/games/2677609345/Sound-Space), however you can implement this into your games too.
 
 [Here's a video of it in action](https://www.youtube.com/watch?v=rbYCVzi9IPo&t=45s&ab_channel=Morphox)
 
