@@ -50,6 +50,9 @@ void setup()
 // Write a message back to the Client
 void write(String msg)
 {
+  // Escaping data separators
+  msg.replace(String(stopChar), String('\\') + stopChar);
+  
   SerialBT.print(msg + stopChar);
 }
 
@@ -172,20 +175,19 @@ void read()
   for (uint32_t i = 0; i < len; i++)
   {
     char c = buffer[i];
-
-    if (c == stopChar)
+    // Handling data separation and escaped data separators
+    if ((c == stopChar) && ((i == 0) || (buffer[i - 1] != '\\')))
     {
       String command = "";
-
-      // If 'true' is returned, the last command type is saved
       if (process(last, command))
       {
         mode = command;
-      }
 
+        lastCommand = millis();
+      }
       last = "";
     }
-    else
+    else if ((c != '\\') || ((i < (len - 1)) && (buffer[i + 1] != stopChar)))
     {
       last += c;
     }
