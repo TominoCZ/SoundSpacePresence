@@ -13,7 +13,7 @@ I recommend using an ESP32 or an Ardunio with a Bluetooth module for this. The d
 
 The data sent to the device is in this format: ``{command}|{data}``, for example the data for a color wave command looks like this: ``w|255,0,255``.
 
-**IMPORTANT:** Each data segment is separated by the ``$`` character by default so the raw data (when buffered) will look like this: ``w|255,0,255$w|0,255,0$``, you can change the data separator.
+**IMPORTANT:** Each message sent by this Client is separated by the ``$`` character by default so the raw data (when buffered) will look like this: ``w|255,0,255$w|0,255,0$``, you can change the data separator if you like.
 
 The remote device needs to constantly send a ping message (can be empty), otherwise the Client program disconnects after the Timeout period since the last received message has passed.
 
