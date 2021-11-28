@@ -25,12 +25,14 @@ You can send commands just by typing them into the console window.
 
 BluetoothSerial SerialBT;
 
-String buffer = ""; // The buffered received Bluetooth data
-String mode = "";   // The last received command type
-
-char stopChar = '$'; // The message separator
-
-long lastPing = 0; // Last time a ping was sent
+// The buffered received Bluetooth data
+String buffer = "";
+// The last received command type
+String mode = "";
+// The message separator
+char stopChar = '$';
+// Last time a ping was sent
+long lastPing = 0;
 
 void setup()
 {
